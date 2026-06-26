@@ -8,7 +8,6 @@ module tb_uart_tx ();
     localparam int L_WAIT_DIV = 5;
     // UART timing parameters
     localparam int L_VALID_DELAY = 60;
-    localparam int L_VALID_WIDTH = 20;
     localparam int L_BIT_TIME    = L_WAIT_DIV * L_CLK_PERIOD;
     // Simulation time
     localparam int L_MARGIN_CYCLES = 500;
@@ -39,11 +38,10 @@ module tb_uart_tx ();
 
     //module
     uart_tx_model #(
-        .P_CLK_PERIOD(L_CLK_PERIOD),
-        .P_VALID_DELAY(L_VALID_DELAY),
-        .P_VALID_WIDTH(L_VALID_WIDTH)
+        .P_VALID_DELAY(L_VALID_DELAY)
     ) u_uart_tx_model (
         .CLK(CLK),
+        .READY(READY),
         .VALID(VALID),
         .DATA(DATA_IN)
     );
@@ -76,12 +74,12 @@ module tb_uart_tx ();
         // Wait for "READY" to be returned upon completion of transmission.
         wait (READY === 1'b1);
 
-        repeat (L_SIM_CYCLES) wait_cmp();
+        repeat (L_SIM_CYCLES) t_wait_cmp();
 
         $finish;
     end
 
-    task automatic wait_cmp();
+    task automatic t_wait_cmp();
         @(posedge CLK);
         #L_CMP_DELAY;
     endtask

@@ -16,11 +16,11 @@ module uart_tx #(
     localparam logic [L_WAIT_LEN-1:0] L_WAIT_MAX = L_WAIT_LEN'(P_WAIT_DIV - 1);
 
     // state
-    typedef enum {
+    typedef enum logic[0:0]{
         S_IDLE,
         S_SEND
     } state_type;
-    state_type           state;
+    state_type state;
 
     // logic
     logic            [9:0] data_reg;

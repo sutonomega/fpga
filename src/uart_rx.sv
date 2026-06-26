@@ -19,7 +19,7 @@ module uart_rx #(
         S_IDLE,
         S_RECEIVE
     } state_type;
-    state_type           state;
+    state_type state;
 
     // logic
     logic            [9:0] data_reg;

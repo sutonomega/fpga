@@ -8,7 +8,6 @@ module tb_uart_rx ();
     localparam int L_WAIT_DIV = 5;
     // UART timing parameters
     localparam int L_VALID_DELAY = 60;
-    localparam int L_VALID_WIDTH = 20;
     // Simulation time
     localparam int L_MARGIN_CYCLES = 500;
     localparam int L_START_BITS    = 1;
@@ -57,11 +56,10 @@ module tb_uart_rx ();
 
     //module
     uart_tx_model #(
-        .P_CLK_PERIOD(L_CLK_PERIOD),
-        .P_VALID_DELAY(L_VALID_DELAY),
-        .P_VALID_WIDTH(L_VALID_WIDTH)
+        .P_VALID_DELAY(L_VALID_DELAY)
     ) u_uart_tx_model (
         .CLK(CLK),
+        .READY(TX_READY),
         .VALID(TX_VALID),
         .DATA(TX_DATA)
     );

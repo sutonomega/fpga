@@ -1,27 +1,49 @@
 module uart_tx_model #(
-    parameter int P_CLK_PERIOD  = 20,
-    parameter int P_VALID_DELAY = 60,
-    parameter int P_VALID_WIDTH = 20
+    parameter int P_VALID_DELAY = 60
 )(
-    input  logic CLK,
-    output logic VALID,
+    input  logic       CLK,
+    input  logic       READY,
+    output logic       VALID,
     output logic [7:0] DATA
 );
-    localparam int L_VALID_DELAY_CYCLES = P_VALID_DELAY / P_CLK_PERIOD;
-    localparam int L_VALID_WIDTH_CYCLES = P_VALID_WIDTH / P_CLK_PERIOD;
+
+    logic [7:0] tx_queue[$];
+
+    task automatic push_tx_data(input logic [7:0] data);
+        tx_queue.push_back(data);
+    endtask
+
+    task automatic push_tx_string(input string str);
+        for (int i = 0; i < str.len(); i++) begin
+            push_tx_data(str.getc(i));
+        end
+    endtask
 
     initial begin
         VALID = 1'b0;
-        DATA  = 8'hx;
+        DATA  = 8'h00;
 
-        repeat (L_VALID_DELAY_CYCLES) @(posedge CLK);
+        forever begin
+            @(posedge CLK);
 
-        VALID = 1'b1;
-        DATA  = 8'h41;
+            if (tx_queue.size() != 0) begin
+                repeat (P_VALID_DELAY) @(posedge CLK);
 
-        repeat (L_VALID_WIDTH_CYCLES) @(posedge CLK);
+                // uart_tx が受け取れるまで待つ
+                wait (READY === 1'b1);
+                @(posedge CLK);
 
-        VALID = 1'b0;
-        DATA  = 8'hx;
+                DATA  = tx_queue.pop_front();
+                VALID = 1'b1;
+
+                // VALID && READY が成立するまで保持
+                do begin
+                    @(posedge CLK);
+                end while (!(VALID && READY));
+
+                VALID = 1'b0;
+            end
+        end
     end
+
 endmodule
