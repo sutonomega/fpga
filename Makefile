@@ -63,7 +63,33 @@ sim-rx:
 	  tb/tb_uart_rx.sv
 	./obj_dir/Vtb_uart_rx
 
-check: lint-tx sim-tx lint-fpga sim-fpga lint-rx sim-rx
+lint-if:
+	verilator --lint-only -Wall --timing -Wno-fatal \
+	  --top-module tb_uart_if \
+	  src/uart_tx.sv \
+	  src/uart_rx.sv \
+		src/uart_if.sv \
+		$(COMMON) \
+		tb/common/uart_line_rx_model.sv \
+	  tb/common/uart_tx_model.sv \
+	  tb/tb_uart_if.sv
+
+sim-if:
+	verilator -Wall --timing -Wno-fatal --binary --trace \
+	  --top-module tb_uart_if \
+	  src/uart_tx.sv \
+	  src/uart_rx.sv \
+		src/uart_if.sv \
+		$(COMMON) \
+		tb/common/uart_line_rx_model.sv \
+	  tb/common/uart_tx_model.sv \
+	  tb/tb_uart_if.sv
+	./obj_dir/Vtb_uart_if
+
+check: lint-tx sim-tx lint-fpga sim-fpga lint-rx sim-rx lint-if sim-if
 
 clean:
 	rm -rf obj_dir dump.vcd dump_uart_fpga.vcd
+
+view:
+	gtkwave dump.vcd
