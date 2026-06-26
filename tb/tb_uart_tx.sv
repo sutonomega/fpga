@@ -39,14 +39,14 @@ module tb_uart_tx ();
     );
 
     //module
-    uart_master #(
+    uart_tx_model #(
         .P_CLK_PERIOD(L_CLK_PERIOD),
         .P_VALID_DELAY(L_VALID_DELAY),
         .P_VALID_WIDTH(L_VALID_WIDTH)
-    ) master (
+    ) uart_tx_model (
         .CLK(CLK),
         .VALID(VALID),
-        .DATA_IN(DATA_IN)
+        .DATA(DATA_IN)
     );
 
     gen_clk #(
@@ -61,15 +61,15 @@ module tb_uart_tx ();
         .RST(RST)
     );
 
-    uart_rx_model #(
+    uart_line_rx_model #(
         .P_BIT_TIME(L_BIT_TIME)
-    ) uart_rx_model (
+    ) uart_line_rx_model (
         .RST(RST),
         .RXD(DATA_OUT)
     );
 
     initial begin
-        uart_rx_model.push_exp_data(8'h41);
+        uart_line_rx_model.push_exp_data(8'h41);
 
         // Wait for "READY" to drop when sending begins.
         wait (READY === 1'b0);

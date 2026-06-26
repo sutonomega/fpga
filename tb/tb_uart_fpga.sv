@@ -46,9 +46,9 @@ module tb_uart_fpga ();
     );
 
     // UART RX model
-    uart_rx_model #(
+    uart_line_rx_model #(
         .P_BIT_TIME (L_BIT_TIME)
-    ) uart_rx_model (
+    ) uart_line_rx_model (
         .RST(RST),
         .RXD(TXD)
     );
@@ -70,7 +70,7 @@ module tb_uart_fpga ();
 
     task automatic push_exp_string(input string str);
         for (int i = 0; i < str.len(); i++) begin
-            uart_rx_model.push_exp_data(str.getc(i));
+            uart_line_rx_model.push_exp_data(str.getc(i));
         end
     endtask
 

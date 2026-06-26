@@ -1,4 +1,4 @@
-module uart_rx_model #(
+module uart_line_rx_model #(
     parameter int P_BIT_TIME = 100
 )(
     input logic RST,
