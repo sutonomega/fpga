@@ -23,7 +23,7 @@ module uart_fpga (
 
     uart_tx #(
         .P_WAIT_DIV(868)
-    ) uart_tx (
+    ) u_uart_tx (
         .CLK      (CLK),
         .RST      (RST),
         .VALID    (valid),

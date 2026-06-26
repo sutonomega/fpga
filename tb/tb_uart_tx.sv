@@ -28,8 +28,7 @@ module tb_uart_tx ();
     //UUT
     uart_tx # (
         .P_WAIT_DIV(L_WAIT_DIV)
-    )
-    uart_tx (
+    ) u_uart_tx (
         .CLK(CLK),
         .RST(RST),
         .VALID(VALID),
@@ -43,7 +42,7 @@ module tb_uart_tx ();
         .P_CLK_PERIOD(L_CLK_PERIOD),
         .P_VALID_DELAY(L_VALID_DELAY),
         .P_VALID_WIDTH(L_VALID_WIDTH)
-    ) uart_tx_model (
+    ) u_uart_tx_model (
         .CLK(CLK),
         .VALID(VALID),
         .DATA(DATA_IN)
@@ -51,25 +50,25 @@ module tb_uart_tx ();
 
     gen_clk #(
         .P_CLK_PERIOD(L_CLK_PERIOD)
-    ) gen_clk (
+    ) u_gen_clk (
         .CLK(CLK)
     );
 
     gen_rst #(
         .P_RST_TIME(L_RST_TIME)
-    ) gen_rst (
+    ) u_gen_rst (
         .RST(RST)
     );
 
     uart_line_rx_model #(
         .P_BIT_TIME(L_BIT_TIME)
-    ) uart_line_rx_model (
+    ) u_uart_line_rx_model (
         .RST(RST),
         .RXD(DATA_OUT)
     );
 
     initial begin
-        uart_line_rx_model.push_exp_data(8'h41);
+        u_uart_line_rx_model.push_exp_data(8'h41);
 
         // Wait for "READY" to drop when sending begins.
         wait (READY === 1'b0);

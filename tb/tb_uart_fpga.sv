@@ -25,7 +25,7 @@ module tb_uart_fpga ();
     logic TXD;
 
     // UUT
-    uart_fpga uart_fpga (
+    uart_fpga u_uart_fpga (
         .CLK (CLK),
         .RST (RST),
         .TXD (TXD)
@@ -34,21 +34,21 @@ module tb_uart_fpga ();
     // clock generator
     gen_clk #(
         .P_CLK_PERIOD(L_CLK_PERIOD)
-    ) gen_clk (
+    ) u_gen_clk (
         .CLK(CLK)
     );
 
     // reset generator
     gen_rst #(
         .P_RST_TIME(L_RST_TIME)
-    ) gen_rst (
+    ) u_gen_rst (
         .RST(RST)
     );
 
     // UART RX model
     uart_line_rx_model #(
         .P_BIT_TIME (L_BIT_TIME)
-    ) uart_line_rx_model (
+    ) u_uart_line_rx_model (
         .RST(RST),
         .RXD(TXD)
     );
@@ -70,7 +70,7 @@ module tb_uart_fpga ();
 
     task automatic push_exp_string(input string str);
         for (int i = 0; i < str.len(); i++) begin
-            uart_line_rx_model.push_exp_data(str.getc(i));
+            u_uart_line_rx_model.push_exp_data(str.getc(i));
         end
     endtask
 
