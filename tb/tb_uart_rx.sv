@@ -60,8 +60,7 @@ module tb_uart_rx ();
         .P_CLK_PERIOD(L_CLK_PERIOD),
         .P_VALID_DELAY(L_VALID_DELAY),
         .P_VALID_WIDTH(L_VALID_WIDTH)
-    )
-    u_uart_tx_model (
+    ) u_uart_tx_model (
         .CLK(CLK),
         .VALID(TX_VALID),
         .DATA(TX_DATA)
@@ -76,15 +75,13 @@ module tb_uart_rx ();
 
     gen_clk #(
         .P_CLK_PERIOD(L_CLK_PERIOD)
-    )
-    u_gen_clk (
+    ) u_gen_clk (
         .CLK(CLK)
     );
 
     gen_rst #(
         .P_RST_TIME(L_RST_TIME)
-    )
-    u_gen_rst (
+    ) u_gen_rst (
         .RST(RST)
     );
 
