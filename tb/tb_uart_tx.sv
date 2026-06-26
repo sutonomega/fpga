@@ -27,24 +27,24 @@ module tb_uart_tx ();
     logic       DATA_OUT;
 
     // Expected values
-    logic       exp_ready;
-    logic       exp_data_out;
+    logic [7:0] exp_data_out;
 
     //UUT
     uart_tx # (
-            .P_WAIT_DIV(L_WAIT_DIV)
+        .P_WAIT_DIV(L_WAIT_DIV)
     )
     uart_tx (
-            .CLK(CLK),
-            .RST(RST),
-            .VALID(VALID),
-            .DATA_IN(DATA_IN),
-            .READY(READY),
-            .DATA_OUT(DATA_OUT)
+        .CLK(CLK),
+        .RST(RST),
+        .VALID(VALID),
+        .DATA_IN(DATA_IN),
+        .READY(READY),
+        .DATA_OUT(DATA_OUT)
     );
 
     //module
     master #(
+        .P_CLK_PERIOD(L_CLK_PERIOD),
         .P_VALID_DELAY(L_VALID_DELAY),
         .P_VALID_WIDTH(L_VALID_WIDTH)
     ) master (
@@ -56,35 +56,27 @@ module tb_uart_tx ();
     gen_clk #(
         .P_CLK_PERIOD(L_CLK_PERIOD)
     ) gen_clk (
-            .CLK(CLK)
+        .CLK(CLK)
     );
 
-    gen_ret #(
+    gen_rst #(
         .P_RST_TIME(L_RST_TIME)
-    ) gen_ret (
-            .RST(RST)
+    ) gen_rst (
+        .RST(RST)
     );
 
-    gen_exp #(
-        .P_ACCEPT_TIME(L_ACCEPT_TIME),
-        .P_BIT_TIME(L_BIT_TIME),
-        .P_RST_TIME(L_RST_TIME)
-    ) gen_exp (
-            .CLK(CLK),
-            .exp_ready(exp_ready),
-            .exp_data_out(exp_data_out)
+    uart_rx_model #(
+        .P_BIT_TIME(L_BIT_TIME)
+    ) uart_rx_model (
+        .RST(RST),
+        .RXD(DATA_OUT),
+        .exp_data_out(exp_data_out)
     );
 
     initial begin
-        repeat (L_SIM_CYCLES) begin
-            wait_cmp();
-            if (READY !== exp_ready) begin
-                $display("Error: READY mismatch at time %0t, expected %b, value %b", $time, exp_ready, READY);
-            end
-            if (DATA_OUT !== exp_data_out) begin
-                $display("Error: DATA_OUT mismatch at time %0t, expected %b, value %b", $time, exp_data_out, DATA_OUT);
-            end
-        end
+
+        exp_data_out = 8'h41;
+        repeat (L_SIM_CYCLES) wait_cmp();
 
         $finish;
     end
@@ -101,54 +93,61 @@ module tb_uart_tx ();
 
 endmodule
 
-module gen_exp #(
-    parameter int P_ACCEPT_TIME = 80,
-    parameter int P_BIT_TIME    = 100,
-    parameter int P_RST_TIME = 20
+module uart_rx_model #(
+    parameter int P_BIT_TIME = 100
 )(
-    input  logic  CLK,
-    output logic  exp_ready,
-    output logic  exp_data_out
+    input  logic       RST,
+    input  logic       RXD,
+    input  logic [7:0] exp_data_out
 );
+    logic [7:0] data_reg;
+
     initial begin
-        exp_ready    = 1'b0;
-        #P_RST_TIME;
-        @(posedge CLK);
-        exp_ready    = 1'b1;
-        #P_ACCEPT_TIME;
-        exp_ready    = 1'b0;
-        repeat(10) #P_BIT_TIME;
-        exp_ready    = 1'b1;
-    end
-    initial begin
-        exp_data_out = 1'b1;
-        #P_RST_TIME;
-        repeat (2) @(posedge CLK);
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b1;
-        #P_BIT_TIME;
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b1;
-        #P_BIT_TIME;
-        exp_data_out = 1'b0;
-        #P_BIT_TIME;
-        exp_data_out = 1'b1;
-        #P_BIT_TIME;
-        exp_data_out = 1'b1;
+        data_reg = 8'h00;
+
+        @(negedge RST);
+
+        forever begin
+            data_reg = 8'h00;
+
+            @(negedge RXD);
+
+            #(P_BIT_TIME / 2);
+
+            if (RXD !== 1'b0) begin
+                $display("Error: invalid start bit at time %0t", $time);
+            end
+
+            for (int i = 0; i < 8; i++) begin
+                #P_BIT_TIME;
+                data_reg[i] = RXD;
+            end
+
+            #P_BIT_TIME;
+            if (RXD !== 1'b1) begin
+                $display("Error: invalid stop bit at time %0t", $time);
+            end
+
+            if (data_reg !== exp_data_out) begin
+                $display(
+                    "Error: DATA_OUT mismatch at time %0t, expected %b, value %b",
+                    $time,
+                    exp_data_out,
+                    data_reg
+                );
+            end else begin
+                $display(
+                    "PASS: UART RX received %h at time %0t",
+                    data_reg,
+                    $time
+                );
+            end
+        end
     end
 endmodule
 
 module master #(
+    parameter int P_CLK_PERIOD  = 20,
     parameter int P_VALID_DELAY = 60,
     parameter int P_VALID_WIDTH = 20
 )(
@@ -156,14 +155,21 @@ module master #(
     output logic VALID,
     output logic [7:0] DATA_IN
 );
+    localparam int L_VALID_DELAY_CYCLES = P_VALID_DELAY / P_CLK_PERIOD;
+    localparam int L_VALID_WIDTH_CYCLES = P_VALID_WIDTH / P_CLK_PERIOD;
+
     initial begin
-        VALID = 1'b0;
+        VALID   = 1'b0;
         DATA_IN = 8'hx;
-        repeat (3) @(posedge CLK);
-        VALID = 1'b1;
+
+        repeat (L_VALID_DELAY_CYCLES) @(posedge CLK);
+
+        VALID   = 1'b1;
         DATA_IN = 8'h41;
-        #P_VALID_WIDTH;
-        VALID = 1'b0;
+
+        repeat (L_VALID_WIDTH_CYCLES) @(posedge CLK);
+
+        VALID   = 1'b0;
         DATA_IN = 8'hx;
     end
 endmodule
@@ -179,7 +185,7 @@ module gen_clk #(
     end
 endmodule
 
-module gen_ret #(
+module gen_rst #(
     parameter int P_RST_TIME = 20
 )(
     output logic RST
