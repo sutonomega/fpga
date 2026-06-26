@@ -1,7 +1,8 @@
 module uart_tx #(
     parameter int P_WAIT_DIV = 5
 )(
-    input  logic       CLK, RST,
+    input  logic       CLK,
+    input  logic       RST,
     input  logic       VALID,
     input  logic [7:0] DATA_IN,
     output logic       READY,
