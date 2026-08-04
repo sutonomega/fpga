@@ -1,95 +1,54 @@
-.PHONY: lint-tx sim-tx lint-fpga sim-fpga clean
+VIVADO = vivado
+GOWIN = ~/IDE/bin/gw_sh
+PROGRAMMER = sudo ~/Programmer/bin/programmer_cli
 
-COMMON = \
-	tb/common/gen_clk.sv \
-	tb/common/gen_rst.sv \
+PROJECT_DIR = $(shell pwd)
+FS_FILE = $(PROJECT_DIR)/gowin/fpga_project/impl/pnr/fpga_project.fs
 
-lint-tx:
-	verilator --lint-only -Wall --timing -Wno-fatal \
-		--top-module tb_uart_tx \
-		src/uart_tx.sv \
-		$(COMMON) \
-		tb/common/uart_tx_model.sv \
-		tb/common/uart_line_rx_model.sv \
-		tb/tb_uart_tx.sv
+LOG_DIR = logs
 
-sim-tx:
-	verilator -Wall --timing -Wno-fatal --binary --trace \
-		--top-module tb_uart_tx \
-		src/uart_tx.sv \
-		$(COMMON) \
-		tb/common/uart_tx_model.sv \
-		tb/common/uart_line_rx_model.sv \
-		tb/tb_uart_tx.sv
-	./obj_dir/Vtb_uart_tx
+TB ?= tb_uart_if
 
-lint-fpga:
-	verilator --lint-only -Wall --timing -Wno-fatal \
-		--top-module tb_uart_fpga \
-		src/uart_tx.sv \
-		src/uart_fpga.sv \
-		$(COMMON) \
-		tb/common/uart_line_rx_model.sv \
-		tb/tb_uart_fpga.sv
 
-sim-fpga:
-	verilator -Wall --timing -Wno-fatal --binary --trace \
-		--top-module tb_uart_fpga \
-		src/uart_tx.sv \
-		src/uart_fpga.sv \
-		$(COMMON) \
-		tb/common/uart_line_rx_model.sv \
-		tb/tb_uart_fpga.sv
-	./obj_dir/Vtb_uart_fpga
+.PHONY: all sim create build program clean
 
-lint-rx:
-	verilator --lint-only -Wall --timing -Wno-fatal \
-	  --top-module tb_uart_rx \
-	  src/uart_tx.sv \
-	  src/uart_rx.sv \
-		$(COMMON) \
-		tb/common/uart_data_rx_model.sv \
-	  tb/common/uart_tx_model.sv \
-	  tb/tb_uart_rx.sv
 
-sim-rx:
-	verilator -Wall --timing -Wno-fatal --binary --trace \
-	  --top-module tb_uart_rx \
-	  src/uart_tx.sv \
-	  src/uart_rx.sv \
-		$(COMMON) \
-		tb/common/uart_data_rx_model.sv \
-	  tb/common/uart_tx_model.sv \
-	  tb/tb_uart_rx.sv
-	./obj_dir/Vtb_uart_rx
+all: build
 
-lint-if:
-	verilator --lint-only -Wall --timing -Wno-fatal \
-	  --top-module tb_uart_if \
-	  src/uart_tx.sv \
-	  src/uart_rx.sv \
-		src/uart_if.sv \
-		$(COMMON) \
-		tb/common/uart_line_rx_model.sv \
-	  tb/common/uart_tx_model.sv \
-	  tb/tb_uart_if.sv
 
-sim-if:
-	verilator -Wall --timing -Wno-fatal --binary --trace \
-	  --top-module tb_uart_if \
-	  src/uart_tx.sv \
-	  src/uart_rx.sv \
-		src/uart_if.sv \
-		$(COMMON) \
-		tb/common/uart_line_rx_model.sv \
-	  tb/common/uart_tx_model.sv \
-	  tb/tb_uart_if.sv
-	./obj_dir/Vtb_uart_if
+# Vivadoシミュレーション
+sim:
+	mkdir -p $(LOG_DIR)
+	cd $(LOG_DIR) && TB=$(TB) $(VIVADO) -mode batch -source ../vivado/sim.tcl
 
-check: lint-tx sim-tx lint-fpga sim-fpga lint-rx sim-rx lint-if sim-if
 
+# Gowin プロジェクト作成
+create:
+	mkdir -p $(LOG_DIR)
+	cd $(LOG_DIR)  \
+	unset DISPLAY && \
+	QT_QPA_PLATFORM=offscreen \
+	$(GOWIN) ../gowin/create.tcl
+
+
+# Gowin 合成・配置配線
+build:
+	mkdir -p $(LOG_DIR)
+	cd $(LOG_DIR)  \
+	unset DISPLAY && \
+	QT_QPA_PLATFORM=offscreen \
+	$(GOWIN) ../gowin/build.tcl
+
+
+# FPGA書き込み
+program:
+	$(PROGRAMMER) \
+		--device GW1NR-9C \
+			--operation_index 2 \
+			--fsFile $(FS_FILE)
+
+
+# 生成物削除
 clean:
-	rm -rf obj_dir dump.vcd dump_uart_fpga.vcd
-
-view:
-	gtkwave dump.vcd
+	rm -rf logs
+	rm -rf gowin/fpga_project

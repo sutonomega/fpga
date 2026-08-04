@@ -104,7 +104,7 @@ module tb_uart_if ();
     endtask
 
     initial begin
-        $dumpfile("dump.vcd");
+        $dumpfile("./wave.vcd");
         $dumpvars(0, tb_uart_if);
     end
 

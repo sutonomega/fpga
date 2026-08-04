@@ -5,6 +5,9 @@ module uart_fpga (
 );
 
     localparam int L_LAST_BYTE = 11;
+    localparam int L_CLK_FRE = 27;
+    localparam int L_UART_FRE = 115200;
+//    localparam int L_UART_FRE = 9600;
 
     typedef enum logic [1:0] {
         STATE_SEND,
@@ -22,14 +25,15 @@ module uart_fpga (
     logic       send_fin;
 
     uart_tx #(
-        .P_WAIT_DIV(868)
+      .P_CLK_FRE(L_CLK_FRE),
+      .P_BAUD_RATE(L_UART_FRE)
     ) u_uart_tx (
-        .CLK      (CLK),
-        .RST      (RST),
-        .VALID    (valid),
-        .DATA_IN  (data_in),
-        .READY    (ready),
-        .DATA_OUT (TXD)
+      .CLK      (CLK),
+      .RST      (RST),
+      .VALID    (valid),
+      .DATA_IN  (data_in),
+      .READY    (ready),
+      .DATA_OUT (TXD)
     );
 
     // set valid

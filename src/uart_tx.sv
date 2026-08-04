@@ -1,5 +1,6 @@
 module uart_tx #(
-    parameter int P_WAIT_DIV = 5
+    parameter  int P_CLK_FRE = 27, 
+    parameter  int P_BAUD_RATE = 115200
 )(
     input  logic       CLK,
     input  logic       RST,
@@ -9,11 +10,13 @@ module uart_tx #(
     output logic       DATA_OUT
 );
 
-    localparam L_WAIT_LEN  = $clog2((P_WAIT_DIV < 2) ? 2 : P_WAIT_DIV);
+//    localparam int L_CYCLE = P_CLK_FRE * 1000000 / P_BAUD_RATE;
+    localparam int L_CYCLE = (P_CLK_FRE * 1000000 + P_BAUD_RATE / 2) / P_BAUD_RATE;
+    localparam int L_WAIT_LEN  = $clog2((L_CYCLE < 2) ? 2 : L_CYCLE);
     localparam L_START_BIT = 1'b0;
     localparam L_STOP_BIT  = 1'b1;
     localparam L_DATA_LEN  = 10;
-    localparam logic [L_WAIT_LEN-1:0] L_WAIT_MAX = L_WAIT_LEN'(P_WAIT_DIV - 1);
+    localparam logic [L_WAIT_LEN-1:0] L_WAIT_MAX = L_WAIT_LEN'(L_CYCLE - 1);
 
     // state
     typedef enum logic[0:0]{
@@ -30,7 +33,8 @@ module uart_tx #(
     logic                  tx_end;
 
     // data out
-    assign DATA_OUT = data_reg[0];
+//    assign DATA_OUT = data_reg[0];
+    assign DATA_OUT = (state == S_SEND) ? data_reg[0] : 1'b1;
 
     // tx control signal
     assign tx_start = VALID && READY;
